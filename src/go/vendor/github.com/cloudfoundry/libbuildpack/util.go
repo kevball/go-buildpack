@@ -41,6 +41,10 @@ func CopyDirectory(srcDir, destDir string) error {
 			if err := CopyDirectory(src, dest); err != nil {
 				return err
 			}
+		} else if f.Mode()&os.ModeSymlink != 0 {
+			originFile, _ := os.Readlink(src)
+			relPath, _ := filepath.Rel(filepath.Dir(src), originFile)
+			os.Symlink(relPath, dest)
 		} else {
 			rc, err := os.Open(src)
 			if err != nil {

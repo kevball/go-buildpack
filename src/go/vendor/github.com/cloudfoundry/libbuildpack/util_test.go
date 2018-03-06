@@ -262,16 +262,36 @@ var _ = Describe("Util", func() {
 			destDir, err = ioutil.TempDir("", "destDir")
 			Expect(err).To(BeNil())
 		})
+		AfterEach(func() { os.RemoveAll(destDir) })
 
 		It("copies source to destination", func() {
-			err = libbuildpack.CopyDirectory("fixtures", destDir)
-			Expect(err).To(BeNil())
+			Expect(libbuildpack.CopyDirectory("fixtures", destDir)).To(Succeed())
 
 			Expect(filepath.Join("fixtures", "source.txt")).To(BeAnExistingFile())
 			Expect(filepath.Join("fixtures", "manifest", "standard", "manifest.yml")).To(BeAnExistingFile())
 
 			Expect(filepath.Join(destDir, "source.txt")).To(BeAnExistingFile())
 			Expect(filepath.Join(destDir, "manifest", "standard", "manifest.yml")).To(BeAnExistingFile())
+		})
+
+		Context("there are symlinks in the source directory", func() {
+			var srcDir string
+			BeforeEach(func() {
+				srcDir, err = ioutil.TempDir("", "srcDir")
+				Expect(err).To(BeNil())
+				Expect(os.MkdirAll(filepath.Join(srcDir, "a"), 0755)).To(Succeed())
+				Expect(ioutil.WriteFile(filepath.Join(srcDir, "a", "b"), []byte("my content"), 0644)).To(Succeed())
+				Expect(os.MkdirAll(filepath.Join(srcDir, "c"), 0755)).To(Succeed())
+				Expect(os.Symlink(filepath.Join(srcDir, "a", "b"), filepath.Join(srcDir, "c", "d"))).To(Succeed())
+				Expect(os.Symlink(filepath.Join(srcDir, "a"), filepath.Join(srcDir, "e"))).To(Succeed())
+			})
+			AfterEach(func() { os.RemoveAll(srcDir) })
+			It("Copies symlinks", func() {
+				Expect(libbuildpack.CopyDirectory(srcDir, destDir)).To(Succeed())
+
+				Expect(os.Readlink(filepath.Join(destDir, "c", "d"))).To(Equal("../a/b"))
+				Expect(os.Readlink(filepath.Join(destDir, "e"))).To(Equal("a"))
+			})
 		})
 	})
 
