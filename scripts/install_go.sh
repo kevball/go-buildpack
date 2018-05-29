@@ -12,14 +12,16 @@ if [ ! -f $GoInstallDir/go/bin/go ]; then
 
   echo "-----> Download go ${GO_VERSION}"
   curl -s -L --retry 15 --retry-delay 2 $URL -o /tmp/go.tar.gz
+  echo "-----> Finished the download of go"
 
   DOWNLOAD_MD5=$(md5sum /tmp/go.tar.gz | cut -d ' ' -f 1)
+  echo "MD5sum: ${DOWNLOAD_MD5}"
 
   if [[ $DOWNLOAD_MD5 != $GO_MD5 ]]; then
     echo "       **ERROR** MD5 mismatch: got $DOWNLOAD_MD5 expected $GO_MD5"
     exit 1
   fi
-
+  echo "------> Untaring go"
   tar xzf /tmp/go.tar.gz -C $GoInstallDir
   rm /tmp/go.tar.gz
 fi
